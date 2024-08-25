@@ -8,6 +8,6 @@ shared_script '@duff/shared/import.lua'
 
 client_script 'client/main.lua'
 
-files {'client/blips.lua', 'shared/config.lua'}
+files {'client/blips.lua', 'shared/config.lua', 'images/*.png'}
 
 lua54 'yes'
