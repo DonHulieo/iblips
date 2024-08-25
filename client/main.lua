@@ -2,6 +2,9 @@ local duff = duff
 local math, require, streaming = duff.math, duff.package.require, duff.streaming
 local blips = require 'client.blips'
 local config = require 'shared.config'
+local TXD <const> = CreateRuntimeTxd('don_blips')
+local image_path <const> = 'images/%s.png'
+local Images = {}
 
 local function init_blip(settings)
   local blip = blips.create(settings.type, settings.data)
@@ -31,6 +34,7 @@ end
 local function deinit_script(resource)
   if resource and type(resource) == 'string' and resource ~= GetCurrentResourceName() then return end
   blips.clear()
+  Images = {}
 end
 
 ---@param key string
@@ -71,8 +75,13 @@ local function call_scaleform(method, ...)
 end
 
 local function set_creator_title(title, verified, rp, money, image)
+  if image and not Images[image] then
+    Images[image] = CreateRuntimeTextureFromImage(TXD, image, image_path:format(image))
+    streaming.async.loadtexturedict('don_blips')
+  end
   call_scaleform('SET_COLUMN_TITLE', 1, '', title, verified and 1 or 0, {texture = true, name = 'don_blips'}, {texture = true, name = image or ''}, 0, 0, rp == '' and false or rp, money == '' and false or money)
   if not image then return end
+  SetStreamedTextureDictAsNoLongerNeeded('don_blips')
 end
 
 local function set_creator_text(index, title, text, style)
