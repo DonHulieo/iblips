@@ -45,7 +45,18 @@ return {
         items = {}
       },
       creator = {
-
+        title = 'Test',
+        verified = true,
+        rp = '',
+        money = '',
+        image = 'ammunation_logo',
+        style = 2,
+        data = {
+          text = {title = 'Text Title', text = 'Mmm Yes'},
+          name = {title = 'Name Title', text = 'Name Mhhhm'},
+          header = {title = 'Header Test', text = 'Tests Head'},
+          icon = {title = 'Icon Title', text = 'Test my Icon', icon = 25, colour = 6, checked = true}
+        }
       }
     },
   },
