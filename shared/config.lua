@@ -3,25 +3,26 @@ local ivec3 = ivec3 --[[@as fun(x: number, y: number, z: number): vector3]] -- A
 return {
   ['Jobs'] =  {
     {
-      name = 'test',
+      name = 'Jobs.1.name',
       type = 'coord',
       data = {coords = vector3(-74.735076904297, -2033.3594970703, 15.7)},
       options = {
         colours = {
           opacity = 150,
-          primary = 1,
-          secondary = false
+          primary = 1
         },
-        display = 'all_select',
-        priority = 2,
-        sprite = 1,
-        scale = 2.0,
+        display = {
+          display = 'all_select',
+          priority = 2
+        },
         flashes = {
           enable = true,
           interval = 500,
           colour = 12
         },
         style = {
+          sprite = 1,
+          scale = 2.0,
           discoverable = false,
           friendly = false,
           bright = false,
@@ -43,20 +44,6 @@ return {
         },
         jobs = {},
         items = {}
-      },
-      creator = {
-        title = 'Test',
-        verified = true,
-        rp = '',
-        money = '',
-        image = 'ammunation_logo',
-        style = 2,
-        data = {
-          text = {title = 'Text Title', text = 'Mmm Yes'},
-          name = {title = 'Name Title', text = 'Name Mhhhm'},
-          header = {title = 'Header Test', text = 'Tests Head'},
-          icon = {title = 'Icon Title', text = 'Test my Icon', icon = 25, colour = 6, checked = true}
-        }
       }
     },
   },
