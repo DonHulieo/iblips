@@ -2,8 +2,10 @@ local duff = duff
 local locale, math, require, streaming = duff.locale, duff.math, duff.package.require, duff.streaming
 local blips = require 'client.blips'
 local config = require 'shared.config'
-local TXD <const> = CreateRuntimeTxd('don_blips')
-local image_path <const> = 'images/%s.png'
+local TXD <const> = CreateRuntimeTxd 'don_blips'
+local RES_NAME <const> = GetCurrentResourceName()
+local IMAGE_PATH <const> = 'images/%s.png'
+local NUI_PATH <const> = 'https://cfx-nui-%s/%s'
 local Images = {}
 local t = locale.t
 
@@ -91,12 +93,19 @@ local function call_scaleform(method, ...)
   EndScaleformMovieMethod()
 end
 
+local function create_runtime_from_nui(path, name, width, height)
+  local obj = CreateDui(path, width, height)
+  CreateRuntimeTextureFromDuiHandle(TXD, name, GetDuiHandle(obj))
+  return obj
+end
+
 local function set_creator_title(title, verified, rp, money, image)
-  if image and not Images[image] then
-    Images[image] = CreateRuntimeTextureFromImage(TXD, image, image_path:format(image))
+  local is_string = type(image) == 'string'
+  if image and not Images[is_string and image or image.name] then
+    Images[image] = is_string and CreateRuntimeTextureFromImage(TXD, image, IMAGE_PATH:format(image)) or create_runtime_from_nui(NUI_PATH:format(image.resource, IMAGE_PATH:format(image.name)), image.name, image.width, image.height)
     streaming.async.loadtexturedict('don_blips')
   end
-  call_scaleform('SET_COLUMN_TITLE', 1, '', title, verified and 1 or 0, {texture = true, name = 'don_blips'}, {texture = true, name = image or ''}, 0, 0, rp == '' and false or rp, money == '' and false or money)
+  call_scaleform('SET_COLUMN_TITLE', 1, '', title, verified and 1 or 0, {texture = true, name = 'don_blips'}, {texture = true, name = image?.name or image or ''}, 0, 0, rp == '' and false or rp, money == '' and false or money)
   if not image then return end
   SetStreamedTextureDictAsNoLongerNeeded('don_blips')
 end
