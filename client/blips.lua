@@ -11,6 +11,18 @@
 ---@field setindicators fun(blip: integer, crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?)
 ---@field setname fun(blip: integer, name: string)
 ---@field remove fun(blip: integer): boolean
+---@field clear fun()
+---@field setconfig fun(blip: integer, options: {colours: {opacity: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?}, flashes: {enable: boolean, interval: integer?, duration: integer?, colour: integer?}, style: {friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?}, indicators: {crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?}, name: string?, category: integer, display: integer, priority: integer?, sprite: integer, scale: number|vector2})
+---@field setcreator fun(blip: integer, creator: boolean)
+---@field settitle fun(blip: integer, title: string, verified: boolean, style: integer)
+---@field setimage fun(blip: integer, image: string)
+---@field seteconomy fun(blip: integer, rp: string, money: string)
+---@field addtext fun(blip: integer, title: string, text: string)
+---@field addname fun(blip: integer, title: string, text: string)
+---@field addheader fun(blip: integer, title: string, text: string)
+---@field addicon fun(blip: integer, title: string, text: string, icon: string, colour: integer, checked: boolean)
+---@field initcreator fun(blip: integer, title: string, verified: boolean, image: string, rp: string, money: string, style: integer, text: string, name: string, header: string, icon: string)
+---@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string, rp: string, money: string, style: integer, data: {text: string, name: string, header: string, icon: string}}
 do
   local duff = duff
   local locale, math = duff.locale, duff.math
