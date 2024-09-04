@@ -12,7 +12,6 @@
 ---@field setname fun(blip: integer, name: string)
 ---@field remove fun(blip: integer): boolean
 ---@field clear fun()
----@field setconfig fun(blip: integer, options: {colours: {opacity: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?}, flashes: {enable: boolean, interval: integer?, duration: integer?, colour: integer?}, style: {friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?}, indicators: {crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?}, name: string?, category: integer, display: integer, priority: integer?, sprite: integer, scale: number|vector2})
 ---@field setcreator fun(blip: integer, creator: boolean)
 ---@field settitle fun(blip: integer, title: string, verified: boolean, style: integer)
 ---@field setimage fun(blip: integer, image: string)
@@ -22,14 +21,14 @@
 ---@field addheader fun(blip: integer, title: string, text: string)
 ---@field addicon fun(blip: integer, title: string, text: string, icon: string, colour: integer, checked: boolean)
 ---@field initcreator fun(blip: integer, title: string, verified: boolean, image: string, rp: string, money: string, style: integer, text: string, name: string, header: string, icon: string)
+---@field createupdater fun(blip: integer, interval: integer, callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}): (promise, toggle: fun(), updater: fun(), update: fun(new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}), new: fun(new_interval: integer, new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}))
 ---@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string, rp: string, money: string, style: integer, data: {text: string, name: string, header: string, icon: string}}
 do
   local duff = duff
-  local locale, math = duff.locale, duff.math
+  local math = duff.math
   local does_blip_exist, does_entity_exist, does_pickup_exist = DoesBlipExist, DoesEntityExist, DoesPickupExist
   local Blips = {}
   local count = 0
-  local t = locale.t
 
   ---@enum (key) blip_types
   local blip_types = {
@@ -368,22 +367,6 @@ do
   end
 
   ---@param blip integer
-  ---@param options {colours: {opacity: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?}?, flashes: {enable: boolean, interval: integer?, duration: integer?, colour: integer?}?, style: {friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?}, indicators: {crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?}, name: string?, category: blip_categories, display: blip_displays, priority: integer?, sprite: integer, scale: number|vector2}
-  ---@param name string?
-  local function set_blip_config(blip, options, name)
-    local colours = options.colours
-    local flashes = options.flashes
-    local style = options.style
-    local indicators = options.indicators
-    if colours then set_blip_colours(blip, colours.opacity, colours.primary, colours.secondary) end
-    set_blip_display(blip, options.category, options.display, options.priority)
-    if flashes then set_blip_flashes(blip, options.flashes.enable, options.flashes.interval, options.flashes.duration, options.flashes.colour) end
-    set_blip_style(blip, options.sprite, options.scale, style.friendly, style.bright, style.hidden, style.high_detail, style.show_cone, style.short_range, style.shrink)
-    if indicators then set_blip_indicators(blip, indicators.crew, indicators.friend, indicators.completed, indicators.heading, indicators.height, indicators.count, indicators.outline, indicators.tick) end
-    if name then set_blip_name(blip, name) end
-  end
-
-  ---@param blip integer
   ---@param creator boolean
   local function set_blip_as_creator(blip, creator)
     if not does_blip_exist(blip) then error('bad argument #1 to \'setblipascreator\' (blip `'..blip..'` doesn\'t exist)', 2) end
@@ -511,6 +494,56 @@ do
   end
 
   ---@param blip integer
+  ---@param interval integer
+  ---@param callback fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}
+  ---@return promise p, fun() toggle, fun() updater, fun(new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}) update, fun(new_interval: integer, new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}) new
+  local function create_blip_updater(blip, interval, callback)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'createblipupdater\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    init_blip(blip)
+    Blips[blip].options = Blips[blip].options or {}
+    local p = promise.new()
+    local stop = false
+    local function update()
+      if stop then return end
+      local data = callback(blip)
+      if not data then return end
+      if data.title then set_blip_title(blip, data.title, data.verified, data.style) end
+      if data.image then set_blip_image(blip, data.image) end
+      if data.rp or data.money then set_blip_economy(blip, data.rp, data.money) end
+      if data.text then add_creator_text(blip, data.text.title, data.text.text) end
+      if data.name then add_creator_name(blip, data.name.title, data.name.text) end
+      if data.header then add_creator_header(blip, data.header.title, data.header.text) end
+      if data.icon then add_creator_icon(blip, data.icon.title, data.icon.text, data.icon.icon, data.icon.colour, data.icon.checked) end
+    end
+    local function updater()
+      update()
+      p:resolve()
+    end
+    local function start_thread()
+      return CreateThread(function()
+        stop = false
+        while not stop do
+          update()
+          Wait(interval)
+        end
+      end)
+    end
+    start_thread()
+    return p, function()
+      stop = not stop
+    end, updater, function(new_callback)
+      stop = true
+      callback = new_callback
+      start_thread()
+    end,
+    function(new_interval, new_callback)
+      stop = true
+      interval, callback = new_interval, new_callback
+      start_thread()
+    end
+  end
+
+  ---@param blip integer
   ---@return {title: string, verified: boolean, rp: string, money: string, image: string|{resource: string, name: string}, style: integer, data: {title: string, text: string, icon: string?, colour: integer?, checked: boolean?}[]}?
   local function get_creator_data(blip)
     if not Blips?[blip]?.options?.creator then return end
@@ -531,7 +564,6 @@ do
     setstyle = set_blip_style,
     setindicators = set_blip_indicators,
     setname = set_blip_name,
-    setconfig = set_blip_config,
     setcreator = set_blip_as_creator,
     settitle = set_blip_title,
     setimage = set_blip_image,
@@ -541,6 +573,7 @@ do
     addheader = add_creator_header,
     addicon = add_creator_icon,
     initcreator = init_creator_blip,
+    createupdater = create_blip_updater,
     getcreator = get_creator_data
   }
 end
