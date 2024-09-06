@@ -11,6 +11,7 @@
 ---@field setindicators fun(blip: integer, crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?)
 ---@field setname fun(blip: integer, name: string)
 ---@field setoptions fun(blip: integer, options: blip_options): blip: integer
+---@field updater fun(blip: integer, interval: integer, callback: fun(blip: integer): blip_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_options)
 ---@field remove fun(blip: integer): boolean
 ---@field clear fun()
 ---@field setcreator fun(blip: integer, creator: boolean)
@@ -21,8 +22,8 @@
 ---@field addname fun(blip: integer, title: string, text: string)
 ---@field addheader fun(blip: integer, title: string, text: string)
 ---@field addicon fun(blip: integer, title: string, text: string, icon: string, colour: integer, checked: boolean)
----@field createupdater fun(blip: integer, interval: integer, callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}): (promise, toggle: fun(), updater: fun(), update: fun(new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}), new: fun(new_interval: integer, new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}))
 ---@field setcreatordata fun(blip: integer, options: blip_creator_options): blip: integer
+---@field createupdater fun(blip: integer, interval: integer, callback: fun(blip: integer): blip_creator_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_creator_options)
 ---@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string, rp: string, money: string, style: integer, data: {text: string, name: string, header: string, icon: string}}
 do
   local duff = duff
@@ -387,6 +388,43 @@ do
   end
 
   ---@param blip integer
+  ---@param time integer
+  ---@param callback fun(blip: integer): blip_options
+  ---@return fun(state: boolean?): state: boolean pause, fun() destroy, fun(new_interval: integer, new_callback: fun(blip: integer): blip_options) update
+  local function blip_updater(blip, time, callback)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'createblipupdater\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    init_blip(blip)
+    Blips[blip].options = Blips[blip].options or {}
+    local _, idx = interval.create(function(blip_id, interval_id)
+      if not does_blip_exist(blip_id) then interval.stop(interval_id) end
+      local data = callback(blip_id)
+      return data
+    end, time)
+    interval.start(idx, function(data)
+      if not data then return end
+      ---@cast data +blip_options
+      if data.coords then set_blip_coords(blip, data.coords, data.coords?.w) end
+      if data.colours then set_blip_colours(blip, data.colours?.opacity, data.colours?.primary, data.colours?.secondary) end
+      if data.display then set_blip_display(blip, data.display?.category, data.display?.display, data.display?.priority) end
+      if data.flashes then set_blip_flashes(blip, data.flashes?.enable, data.flashes?.interval, data.flashes?.duration, data.flashes?.colour) end
+      if data.style then set_blip_style(blip, data.style?.sprite, data.style?.scale, data.style?.friendly, data.style?.bright, data.style?.hidden, data.style?.high_detail, data.style?.show_cone, data.style?.short_range, data.style?.shrink) end
+      if data.indicators then set_blip_indicators(blip, data.indicators?.crew, data.indicators?.friend, data.indicators?.completed, data.indicators?.heading, data.indicators?.height, data.indicators?.count, data.indicators?.outline, data.indicators?.tick) end
+      if data.name then set_blip_name(blip, data.name) end
+    end, blip, idx)
+    return function(pause)
+      return interval.pause(idx, pause)
+    end, function()
+      interval.destroy(idx)
+    end, function(new_interval, new_callback)
+      interval.update(idx, function(blip_id, interval_id)
+        if not does_blip_exist(blip_id) then interval.stop(interval_id) end
+        local data = new_callback(blip_id)
+        return data
+      end, nil, new_interval)
+    end
+  end
+
+  ---@param blip integer
   ---@param creator boolean
   local function set_blip_as_creator(blip, creator)
     if not does_blip_exist(blip) then error('bad argument #1 to \'setblipascreator\' (blip `'..blip..'` doesn\'t exist)', 2) end
@@ -517,18 +555,19 @@ do
   end
 
   ---@param blip integer
-  ---@param interval integer
-  ---@param callback fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}
-  ---@return promise p, fun() toggle, fun() updater, fun(new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}) update, fun(new_interval: integer, new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}) new
-  local function create_blip_updater(blip, interval, callback)
+  ---@param time integer
+  ---@param callback fun(blip: integer): blip_creator_options
+  ---@return fun(state: boolean?): state: boolean pause, fun() destroy, fun(new_interval: integer, new_callback: fun(blip: integer): blip_creator_options) update
+  local function creator_updater(blip, time, callback)
     if not does_blip_exist(blip) then error('bad argument #1 to \'createblipupdater\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
-    local p = promise.new()
-    local stop = false
-    local function update()
-      if stop then return end
-      local data = callback(blip)
+    local _, idx = interval.create(function(blip_id, interval_id)
+      if not does_blip_exist(blip_id) then interval.stop(interval_id) end
+      local data = callback(blip_id)
+      return data
+    end, time)
+    interval.start(idx, function(data)
       if not data then return end
       if data.title then set_blip_title(blip, data.title, data.verified, data.style) end
       if data.image then set_blip_image(blip, data.image) end
@@ -537,32 +576,17 @@ do
       if data.name then add_creator_name(blip, data.name.title, data.name.text) end
       if data.header then add_creator_header(blip, data.header.title, data.header.text) end
       if data.icon then add_creator_icon(blip, data.icon.title, data.icon.text, data.icon.icon, data.icon.colour, data.icon.checked) end
-    end
-    local function updater()
-      update()
-      p:resolve()
-    end
-    local function start_thread()
-      return CreateThread(function()
-        stop = false
-        while not stop do
-          update()
-          Wait(interval)
-        end
-      end)
-    end
-    start_thread()
-    return p, function()
-      stop = not stop
-    end, updater, function(new_callback)
-      stop = true
-      callback = new_callback
-      start_thread()
-    end,
-    function(new_interval, new_callback)
-      stop = true
-      interval, callback = new_interval, new_callback
-      start_thread()
+    end, blip, idx)
+    return function(pause)
+      return interval.pause(idx, pause)
+    end, function()
+      interval.destroy(idx)
+    end, function(new_interval, new_callback)
+      interval.update(idx, function(blip_id, interval_id)
+        if not does_blip_exist(blip_id) then interval.stop(interval_id) end
+        local data = new_callback(blip_id)
+        return data
+      end, nil, new_interval)
     end
   end
 
@@ -588,6 +612,7 @@ do
     setindicators = set_blip_indicators,
     setname = set_blip_name,
     setoptions = set_blip_options,
+    updater = blip_updater,
     setcreator = set_blip_as_creator,
     settitle = set_blip_title,
     setimage = set_blip_image,
@@ -596,8 +621,8 @@ do
     addname = add_creator_name,
     addheader = add_creator_header,
     addicon = add_creator_icon,
-    createupdater = create_blip_updater,
     setcreatordata = set_blip_creator_data,
+    creatorupdater = creator_updater,
     getcreator = get_creator_data
   }
 end
