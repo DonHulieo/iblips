@@ -25,7 +25,7 @@
 ---@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string, rp: string, money: string, style: integer, data: {text: string, name: string, header: string, icon: string}}
 do
   local duff = duff
-  local math = duff.math
+  local math, interval = duff.math, duff.interval
   local does_blip_exist, does_entity_exist, does_pickup_exist = DoesBlipExist, DoesEntityExist, DoesPickupExist
   local Blips = {}
   local count = 0
@@ -246,43 +246,36 @@ do
     Blips[blip].options.display = display
   end
 
-  ---@return promise?
   local function custom_flash_blip(blip, colour)
     if not does_blip_exist(blip) then error('bad argument #1 to \'customflashblip\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     if not Blips[blip].options.flashes then return end
     local colours = {Blips[blip].options.primary, colour}
-    local interval = Blips[blip].options.flash_interval
+    local time = Blips[blip].options.flash_interval
     local duration = Blips[blip].options.flash_duration or -1
-    Wait(0)
-    local p = promise.new()
-    CreateThread(function()
-      local start = GetNetworkTimeAccurate()
-      local i = 0
-      repeat
-        SetBlipColour(blip, colours[i % 2 + 1])
-        Wait(interval)
-        i += 1
-      until duration > 0 and GetNetworkTimeAccurate() - start >= duration or not does_blip_exist(blip) or not Blips?[blip]?.options.flashes
-      p:resolve()
-    end)
-    return p
+    local i = 0
+    local _, idx = interval.create(function(blip_id, interval_id)
+      if not does_blip_exist(blip_id) or not Blips[blip_id].options.flashes then interval.stop(interval_id) end
+      SetBlipColour(blip_id, colours[i % 2 + 1])
+      i += 1
+    end, time, duration)
+    interval.start(idx, nil, blip, idx)
   end
 
   ---@param blip integer
   ---@param flashes boolean
-  ---@param interval integer?
+  ---@param time integer?
   ---@param duration integer?
   ---@param colour integer?
-  local function set_blip_flashes(blip, flashes, interval, duration, colour)
+  local function set_blip_flashes(blip, flashes, time, duration, colour)
     if not does_blip_exist(blip) then error('bad argument #1 to \'setblipflashes\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     if not flashes and not Blips[blip].options.flashes then return end
-    if interval then
-      if not colour then SetBlipFlashes(blip, flashes); SetBlipFlashInterval(blip, interval) end
-      Blips[blip].options.flash_interval = interval
+    if time then
+      if not colour then SetBlipFlashes(blip, flashes); SetBlipFlashInterval(blip, time) end
+      Blips[blip].options.flash_interval = time
     end
     if duration then
       if not colour then SetBlipFlashTimer(blip, duration) end
@@ -564,6 +557,7 @@ do
     setstyle = set_blip_style,
     setindicators = set_blip_indicators,
     setname = set_blip_name,
+    setoptions = set_blip_options,
     setcreator = set_blip_as_creator,
     settitle = set_blip_title,
     setimage = set_blip_image,
