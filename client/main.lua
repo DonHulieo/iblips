@@ -2,13 +2,17 @@ local duff = duff
 local bridge, locale, math, require, streaming = duff.bridge, duff.locale, duff.math, duff.package.require, duff.streaming
 local blips = require 'client.blips'
 local config = require 'shared.config'
+local LOAD_EVENT <const>, UNLOAD_EVENT <const> = bridge['_DATA']['EVENTS'].LOAD, bridge['_DATA']['EVENTS'].UNLOAD
 local TXD <const> = CreateRuntimeTxd 'don_blips'
 local RES_NAME <const> = GetCurrentResourceName()
 local IMAGE_PATH <const> = 'images/%s.png'
 local NUI_PATH <const> = 'https://cfx-nui-%s/%s'
 local Images = {}
+local creator_entries = 0
 local t = locale.t
 
+---@param key string
+---@return boolean
 local function does_trans_exist(key) return pcall(t, key) end
 
 ---@param options blip_creator_options
@@ -43,8 +47,7 @@ local function create_blip(blip_type, data, options, creator_options)
   return blip
 end
 
-exports('initblip', create_blip)
-
+---@param resource string?
 local function init_script(resource)
   if resource and type(resource) == 'string' and resource ~= RES_NAME then return end
   for category, blip_configs in pairs(config) do
@@ -56,6 +59,7 @@ local function init_script(resource)
   end
 end
 
+---@param resource string?
 local function deinit_script(resource)
   if resource and type(resource) == 'string' and resource ~= RES_NAME then return end
   blips.clear()
@@ -99,16 +103,26 @@ local function call_scaleform(method, ...)
   EndScaleformMovieMethod()
 end
 
+---@param path string
+---@param name string
+---@param width integer
+---@param height integer
+---@return integer
 local function create_runtime_from_nui(path, name, width, height)
   local obj = CreateDui(path, width, height)
   CreateRuntimeTextureFromDuiHandle(TXD, name, GetDuiHandle(obj))
   return obj
 end
 
+---@param title string
+---@param verified boolean?
+---@param rp string?
+---@param money string?
+---@param image string|{resource: string, name: string, width: integer, height: integer}
 local function set_creator_title(title, verified, rp, money, image)
   local is_string = type(image) == 'string'
   if image and not Images[is_string and image or image.name] then
-    Images[image] = is_string and CreateRuntimeTextureFromImage(TXD, image, IMAGE_PATH:format(image)) or create_runtime_from_nui(NUI_PATH:format(image.resource, IMAGE_PATH:format(image.name)), image.name, image.width, image.height)
+    Images[image] = is_string and CreateRuntimeTextureFromImage(TXD, image --[[@as string]], IMAGE_PATH:format(image)) or create_runtime_from_nui(NUI_PATH:format(image.resource, IMAGE_PATH:format(image.name)), image.name, image.width, image.height)
     streaming.async.loadtexturedict('don_blips')
   end
   call_scaleform('SET_COLUMN_TITLE', 1, '', title, verified and 1 or 0, {texture = true, name = 'don_blips'}, {texture = true, name = image?.name or image or ''}, 0, 0, rp == '' and false or rp, money == '' and false or money)
@@ -116,34 +130,59 @@ local function set_creator_title(title, verified, rp, money, image)
   SetStreamedTextureDictAsNoLongerNeeded('don_blips')
 end
 
+---@param index integer
+---@param title string
+---@param text string
+---@param style integer?
 local function set_creator_text(index, title, text, style)
   call_scaleform('SET_DATA_SLOT', 1, index, 65, 3, style or 0, 0, 0, title, text)
 end
 
+---@param index integer
+---@param title string
+---@param text string
+---@param icon integer
+---@param colour integer
+---@param checked boolean
 local function set_creator_icon(index, title, text, icon, colour, checked)
   call_scaleform('SET_DATA_SLOT', 1, index, 65, 3, 2, 0, 1, title, text, icon, colour, checked)
 end
 
-local entries = 0
-
+---@param title string
+---@param text string
+---@param style integer
 local function add_creator_text(title, text, style)
-  set_creator_text(entries, title, text, style)
-  entries += 1
+  set_creator_text(creator_entries, title, text, style)
+  creator_entries += 1
 end
 
+---@param title string
+---@param text string
+---@param icon integer
+---@param colour integer
+---@param checked boolean
 local function add_creator_icon(title, text, icon, colour, checked)
-  set_creator_icon(entries, title, text, icon, colour, checked)
-  entries += 1
+  set_creator_icon(creator_entries, title, text, icon, colour, checked)
+  creator_entries += 1
 end
 
 local function clear_display()
   call_scaleform('SET_DATA_SLOT_EMPTY', 1)
-  entries = 0
+  creator_entries = 0
 end
 
 local function update_display() call_scaleform('DISPLAY_DATA_SLOT', 1) end
 
+---@param state boolean
 local function show_display(state) call_scaleform('SHOW_COLUMN', 1, state) end
+
+-------------------------------- EVENTS --------------------------------
+AddEventHandler('onResourceStart', init_script)
+AddEventHandler('onResourceStop', deinit_script)
+
+RegisterNetEvent(LOAD_EVENT, init_script)
+RegisterNetEvent(UNLOAD_EVENT, deinit_script)
+-------------------------------- THREADS --------------------------------
 
 CreateThread(function()
   local last_blip, sleep = 0, 3000
@@ -192,8 +231,9 @@ CreateThread(function()
   end
 end)
 
-AddEventHandler('onResourceStart', init_script)
-AddEventHandler('onResourceStop', deinit_script)
+-------------------------------- EXPORTS --------------------------------
+
+exports('initblip', create_blip)
 
 for k, v in pairs(blips) do
   exports(k, type(v) == 'function' and v or function(...) return v end)

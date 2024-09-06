@@ -16,7 +16,7 @@
 ---@field clear fun()
 ---@field setcreator fun(blip: integer, creator: boolean)
 ---@field settitle fun(blip: integer, title: string, verified: boolean, style: integer)
----@field setimage fun(blip: integer, image: string)
+---@field setimage fun(blip: integer, image: string|{resource: string, name: string, width: integer, height: integer})
 ---@field seteconomy fun(blip: integer, rp: string, money: string)
 ---@field addtext fun(blip: integer, title: string, text: string)
 ---@field addname fun(blip: integer, title: string, text: string)
@@ -24,7 +24,7 @@
 ---@field addicon fun(blip: integer, title: string, text: string, icon: string, colour: integer, checked: boolean)
 ---@field setcreatordata fun(blip: integer, options: blip_creator_options): blip: integer
 ---@field createupdater fun(blip: integer, interval: integer, callback: fun(blip: integer): blip_creator_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_creator_options)
----@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string, rp: string, money: string, style: integer, data: {text: string, name: string, header: string, icon: string}}
+---@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string|{resource: string, name: string, width: integer, height: integer}, rp: string, money: string, style: integer, data: {title: string, text: string, icon: integer?, colour: integer?, checked: boolean?}[]}}
 do
   local duff = duff
   local math, interval = duff.math, duff.interval
@@ -455,7 +455,7 @@ do
   end
 
   ---@param blip integer
-  ---@param image string|{resource: string, name: string}?
+  ---@param image string|{resource: string, name: string, width: integer, height: integer}?
   local function set_blip_image(blip, image)
     if not does_blip_exist(blip) then error('bad argument #1 to \'setblipimage\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
@@ -513,7 +513,7 @@ do
   ---@param blip integer
   ---@param title string?
   ---@param text string?
-  ---@param icon string?
+  ---@param icon integer?
   ---@param colour integer?
   ---@param checked boolean?
   local function add_creator_icon(blip, title, text, icon, colour, checked)
@@ -535,7 +535,7 @@ do
   ---@field text {title: string, text: string}?
   ---@field name {title: string, text: string}?
   ---@field header {title: string, text: string}?
-  ---@field icon {title: string, text: string, icon: string, colour: integer, checked: boolean}?
+  ---@field icon {title: string, text: string, icon: integer, colour: integer, checked: boolean}?
 
   ---@param blip integer
   ---@param options blip_creator_options
@@ -591,7 +591,7 @@ do
   end
 
   ---@param blip integer
-  ---@return {title: string, verified: boolean, rp: string, money: string, image: string|{resource: string, name: string}, style: integer, data: {title: string, text: string, icon: string?, colour: integer?, checked: boolean?}[]}?
+  ---@return {title: string, verified: boolean, rp: string, money: string, image: string|{resource: string, name: string, width: integer, height: integer}, style: integer, data: {title: string, text: string, icon: integer?, colour: integer?, checked: boolean?}[]}?
   local function get_creator_data(blip)
     if not Blips?[blip]?.options?.creator then return end
     return Blips[blip].options.creator
