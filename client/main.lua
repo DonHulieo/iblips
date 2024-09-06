@@ -1,5 +1,5 @@
 local duff = duff
-local locale, math, require, streaming = duff.locale, duff.math, duff.package.require, duff.streaming
+local bridge, locale, math, require, streaming = duff.bridge, duff.locale, duff.math, duff.package.require, duff.streaming
 local blips = require 'client.blips'
 local config = require 'shared.config'
 local TXD <const> = CreateRuntimeTxd 'don_blips'
@@ -11,28 +11,35 @@ local t = locale.t
 
 local function does_trans_exist(key) return pcall(t, key) end
 
----@param name string
+---@param options blip_creator_options
+---@return blip_creator_options?
+local function trans_creator_data(options)
+  if not options then return end
+  options.title = does_trans_exist(options.title) and t(options.title) or options.title
+  local function parse_title_text(data)
+    if not data then return end
+    data.title = does_trans_exist(data.title) and t(data.title) or data.title
+    data.text = does_trans_exist(data.text) and t(data.text) or data.text
+    return data
+  end
+  if options.text then options.text = parse_title_text(options.text) end
+  if options.name then options.name = parse_title_text(options.name) end
+  if options.header then options.header = parse_title_text(options.header) end
+  if options.icon then options.icon = parse_title_text(options.icon) end
+  return options
+end
+
 ---@param blip_type blip_types
 ---@param data {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}
----@param options {colours: {opacity: number, primary: number, secondary: (vector3|{r: integer, g: integer, b: integer})?}?, display: {category: blip_categories, display: blip_displays, priority: integer?}, flashes: {enable: boolean?, interval: integer?, duration: integer?, colour: integer?}?, style: {sprite: integer, scale: number|vector2, friendly: boolean?, bright: boolean, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?}?, indicators: {crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?}?}
+---@param options blip_options
+---@param creator_options blip_creator_options?
 ---@return integer blip
-local function create_blip(name, blip_type, data, options, creator)
+local function create_blip(blip_type, data, options, creator_options)
   local blip = blips.create(blip_type, data)
-  local colours = options.colours
-  local display = options.display
-  local flashes = options.flashes
-  local style = options.style
-  local indicators = options.indicators
-  if colours then blips.setcolours(blip, colours.opacity, colours.primary, colours.secondary) end
-  if display then blips.setdisplay(blip, display.category, display.display, display.priority) end
-  if flashes then blips.setflashes(blip, flashes.enable, flashes.interval, flashes.duration, flashes.colour) end
-  if style then blips.setstyle(blip, style.sprite, style.scale, style.friendly, style.bright, style.hidden, style.high_detail, style.show_cone, style.short_range, style.shrink) end
-  if indicators then blips.setindicators(blip, indicators.crew, indicators.friend, indicators.completed, indicators.heading, indicators.height, indicators.count, indicators.outline, indicators.tick) end
-  blips.setname(blip, name)
-  if creator then
-    local title = does_trans_exist(creator.title) and t(creator.title) or creator.title
-    blips.initcreator(blip, title, creator.verified, creator.image, creator.rp, creator.money, creator.style, creator.data.text, creator.data.name, creator.data.header, creator.data.icon)
-  end
+  local name = options.name
+  options.name = does_trans_exist(name) and t(name) or name
+  blips.setoptions(blip, options)
+  if creator_options then trans_creator_data(creator_options); blips.setcreatordata(blip, creator_options) end
   return blip
 end
 
@@ -44,8 +51,7 @@ local function init_script(resource)
     category = category:lower()
     for i = 1, #blip_configs do
       local data = blip_configs[i]
-      local name = does_trans_exist(data.name) and t(data.name) or data.name
-      create_blip(name, data.type, data.data, data.options, data.creator)
+      create_blip(data.type, data.data, data.options, data.creator)
     end
   end
 end
@@ -186,8 +192,8 @@ CreateThread(function()
   end
 end)
 
-AddEventHandler('onClientResourceStart', init_script)
-AddEventHandler('onClientResourceStop', deinit_script)
+AddEventHandler('onResourceStart', init_script)
+AddEventHandler('onResourceStop', deinit_script)
 
 for k, v in pairs(blips) do
   exports(k, type(v) == 'function' and v or function(...) return v end)

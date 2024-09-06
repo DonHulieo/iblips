@@ -3,10 +3,10 @@ local ivec3 = ivec3 --[[@as fun(x: number, y: number, z: number): vector3]] -- A
 return {
   ['Jobs'] =  {
     {
-      name = 'Jobs.1.name',
       type = 'coord',
       data = {coords = vector3(-74.735076904297, -2033.3594970703, 15.7)},
       options = {
+        name = 'Jobs.1.name',
         colours = {
           opacity = 150,
           primary = 1
@@ -43,7 +43,8 @@ return {
           tick = false
         },
         jobs = {},
-        items = {}
+        items = {},
+        distance = 250.0
       }
     },
   },
