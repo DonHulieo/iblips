@@ -10,6 +10,7 @@
 ---@field setstyle fun(blip: integer, sprite: integer, scale: number|vector2, friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?)
 ---@field setindicators fun(blip: integer, crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?)
 ---@field setname fun(blip: integer, name: string)
+---@field setoptions fun(blip: integer, options: blip_options): blip: integer
 ---@field remove fun(blip: integer): boolean
 ---@field clear fun()
 ---@field setcreator fun(blip: integer, creator: boolean)
@@ -20,8 +21,8 @@
 ---@field addname fun(blip: integer, title: string, text: string)
 ---@field addheader fun(blip: integer, title: string, text: string)
 ---@field addicon fun(blip: integer, title: string, text: string, icon: string, colour: integer, checked: boolean)
----@field initcreator fun(blip: integer, title: string, verified: boolean, image: string, rp: string, money: string, style: integer, text: string, name: string, header: string, icon: string)
 ---@field createupdater fun(blip: integer, interval: integer, callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}): (promise, toggle: fun(), updater: fun(), update: fun(new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}), new: fun(new_interval: integer, new_callback: fun(blip: integer): {title: string?, verified: boolean?, rp: string?, money: string?, image: (string|{resource: string, name: string})?, style: integer?, text: {title: string, text: string}?, name: {title: string, text: string}?, header: {title: string, text: string}?, icon: {title: string, text: string, icon: string, colour: integer, checked: boolean}?}))
+---@field setcreatordata fun(blip: integer, options: blip_creator_options): blip: integer
 ---@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string, rp: string, money: string, style: integer, data: {text: string, name: string, header: string, icon: string}}
 do
   local duff = duff
@@ -359,6 +360,32 @@ do
     Blips[blip].options.name = name
   end
 
+  ---@class blip_options
+  ---@field name string
+  ---@field coords vector3|vector4?
+  ---@field colours {opacity: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?}
+  ---@field display {category: blip_categories, display: blip_displays, priority: integer?}
+  ---@field flashes {enable: boolean, interval: integer?, duration: integer?, colour: integer?}
+  ---@field style {sprite: integer, scale: number|vector2, friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?}
+  ---@field indicators {crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?}
+
+  ---@param blip integer
+  ---@param options blip_options
+  ---@return integer blip
+  local function set_blip_options(blip, options)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipoptions\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    init_blip(blip)
+    Blips[blip].options = Blips[blip].options or {}
+    if options.coords then set_blip_coords(blip, options.coords, options.coords?.w) end
+    if options.colours then set_blip_colours(blip, options.colours?.opacity, options.colours?.primary, options.colours?.secondary) end
+    if options.display then set_blip_display(blip, options.display?.category, options.display?.display, options.display?.priority) end
+    if options.flashes then set_blip_flashes(blip, options.flashes?.enable, options.flashes?.interval, options.flashes?.duration, options.flashes?.colour) end
+    if options.style then set_blip_style(blip, options.style?.sprite, options.style?.scale, options.style?.friendly, options.style?.bright, options.style?.hidden, options.style?.high_detail, options.style?.show_cone, options.style?.short_range, options.style?.shrink) end
+    if options.indicators then set_blip_indicators(blip, options.indicators?.crew, options.indicators?.friend, options.indicators?.completed, options.indicators?.heading, options.indicators?.height, options.indicators?.count, options.indicators?.outline, options.indicators?.tick) end
+    if options.name then set_blip_name(blip, options.name) end
+    return blip
+  end
+
   ---@param blip integer
   ---@param creator boolean
   local function set_blip_as_creator(blip, creator)
@@ -460,29 +487,32 @@ do
     data[2] = {title = title, text = text, icon = icon or '', colour = colour or 0, checked = checked or false}
   end
 
+  ---@class blip_creator_options
+  ---@field title string
+  ---@field verified boolean
+  ---@field image string
+  ---@field rp string
+  ---@field money string
+  ---@field style integer
+  ---@field text {title: string, text: string}?
+  ---@field name {title: string, text: string}?
+  ---@field header {title: string, text: string}?
+  ---@field icon {title: string, text: string, icon: string, colour: integer, checked: boolean}?
+
   ---@param blip integer
-  ---@param title string?
-  ---@param verified boolean?
-  ---@param image string?
-  ---@param rp string?
-  ---@param money string?
-  ---@param style integer?
-  ---@param text {title: string, text: string}?
-  ---@param name {title: string, text: string}?
-  ---@param header {title: string, text: string}?
-  ---@param icon {title: string, text: string, icon: string, colour: integer, checked: boolean}?
+  ---@param options blip_creator_options
   ---@return integer blip
-  local function init_creator_blip(blip, title, verified, image, rp, money, style, text, name, header, icon)
+  local function set_blip_creator_data(blip, options)
     if not does_blip_exist(blip) then error('bad argument #1 to \'initcreatorblip\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
-    set_blip_title(blip, title, verified, style)
-    if image ~= '' then set_blip_image(blip, image) end
-    set_blip_economy(blip, rp, money)
-    if text then add_creator_text(blip, text.title, text.text) end
-    if name then add_creator_name(blip, name.title, name.text) end
-    if header then add_creator_header(blip, header.title, header.text) end
-    if icon then add_creator_icon(blip, icon.title, icon.text, icon.icon, icon.colour, icon.checked) end
+    set_blip_title(blip, options.title, options.verified, options.style)
+    if options.image ~= '' then set_blip_image(blip, options.image) end
+    set_blip_economy(blip, options.rp, options.money)
+    if options.text then add_creator_text(blip, options.text?.title, options.text?.text) end
+    if options.name then add_creator_name(blip, options.name?.title, options.name?.text) end
+    if options.header then add_creator_header(blip, options.header?.title, options.header?.text) end
+    if options.icon then add_creator_icon(blip, options.icon?.title, options.icon?.text, options.icon?.icon, options.icon?.colour, options.icon?.checked) end
     return blip
   end
 
@@ -566,8 +596,8 @@ do
     addname = add_creator_name,
     addheader = add_creator_header,
     addicon = add_creator_icon,
-    initcreator = init_creator_blip,
     createupdater = create_blip_updater,
+    setcreatordata = set_blip_creator_data,
     getcreator = get_creator_data
   }
 end
