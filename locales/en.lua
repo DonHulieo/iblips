@@ -5,10 +5,31 @@ return {
         name = 'test',
         creator = {
           title = 'Test',
-          text = {title = 'Text Title', text = 'Mmm Yes'},
-          name = {title = 'Name Title', text = 'Name Mhhhm'},
-          header = {title = 'Header Test', text = 'Tests Head'},
-          icon = {title = 'Icon Title', text = 'Test my Icon'}
+          info = {
+            {
+              title = 'Title Test'
+            },
+            {
+              title = 'Title_Text Title Test',
+              text = 'Title_Text Text Test'
+            },
+            {
+              title = 'Icon Title Test',
+              text = 'Icon Text Test'
+            },
+            {
+              title = 'Player Title Test',
+              text = 'DonHulieo',
+              crew = 'ECIK',
+            },
+            {
+              title = 'Header Title Test',
+              text = 'Header Text Test'
+            },
+            {
+              text = 'Just Text Test'
+            }
+          }
         }
       }
     }
