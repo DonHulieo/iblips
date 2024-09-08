@@ -10,6 +10,7 @@
 ---@field setstyle fun(blip: integer, sprite: integer, scale: number|vector2, friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?)
 ---@field setindicators fun(blip: integer, crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?)
 ---@field setname fun(blip: integer, name: string)
+---@field setrange fun(blip: integer, distance: number)
 ---@field setoptions fun(blip: integer, options: blip_options): blip: integer
 ---@field updater fun(blip: integer, interval: integer, callback: fun(blip: integer): blip_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_options)
 ---@field remove fun(blip: integer): boolean
@@ -370,7 +371,7 @@ do
 
   ---@param blip integer
   ---@param distance number
-  local function set_blip_distance(blip, distance)
+  local function set_blip_range(blip, distance)
     if not does_blip_exist(blip) then error('bad argument #1 to \'setblipdistance\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
@@ -416,7 +417,7 @@ do
     if options.style then set_blip_style(blip, options.style?.sprite, options.style?.scale, options.style?.friendly, options.style?.bright, options.style?.hidden, options.style?.high_detail, options.style?.show_cone, options.style?.short_range, options.style?.shrink) end
     if options.indicators then set_blip_indicators(blip, options.indicators?.crew, options.indicators?.friend, options.indicators?.completed, options.indicators?.heading, options.indicators?.height, options.indicators?.count, options.indicators?.outline, options.indicators?.tick) end
     if options.name then set_blip_name(blip, options.name) end
-    if options.distance then set_blip_distance(blip, options.distance) end
+    if options.distance then set_blip_range(blip, options.distance) end
     return blip
   end
 
@@ -437,7 +438,7 @@ do
       if not data then return end
       ---@cast data +blip_options
       if data.coords then set_blip_coords(blip, data.coords, data.coords?.w) end
-      if data.distance then set_blip_distance(blip, data.distance) end
+      if data.distance then set_blip_range(blip, data.distance) end
       if data.colours then set_blip_colours(blip, data.colours?.opacity, data.colours?.primary, data.colours?.secondary) end
       if data.display then set_blip_display(blip, data.display?.category, data.display?.display, data.display?.priority) end
       if data.flashes then set_blip_flashes(blip, data.flashes?.enable, data.flashes?.interval, data.flashes?.duration, data.flashes?.colour) end
@@ -624,7 +625,7 @@ do
     setstyle = set_blip_style,
     setindicators = set_blip_indicators,
     setname = set_blip_name,
-    setdist = set_blip_distance,
+    setrange = set_blip_range,
     setoptions = set_blip_options,
     updater = blip_updater,
     setcreator = set_blip_as_creator,
