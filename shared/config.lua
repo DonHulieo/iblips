@@ -1,7 +1,7 @@
 ---@diagnostic disable-next-line: undefined-global
 local ivec3 = ivec3 --[[@as fun(x: number, y: number, z: number): vector3]] -- Applies integer-casting rules to the input values
 return {
-  ---@type {['Jobs']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Jobs']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Jobs'] =  {
     {
       type = 'coord',
@@ -89,16 +89,16 @@ return {
       }
     },
   },
-  ---@type {['Mission']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Mission']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Mission'] = {},
-  ---@type {['Activity']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Activity']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Activity'] = {},
-  ---@type {['Shops']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Shops']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Shops'] = {},
-  ---@type {['Races']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Races']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Races'] = {},
-  ---@type {['Property']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Property']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Property'] = {},
-  ---@type {['Other']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Other']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Other'] = {}
 }
