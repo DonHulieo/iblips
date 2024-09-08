@@ -30,12 +30,6 @@ function exports.iblips:gettype(blip) end
 function exports.iblips:getdata(blip) end
 
 ---@param blip integer
----@param opacity integer?
----@param primary integer? See [HUD Colours](https://docs.fivem.net/docs/game-references/blips/#blip-colors).
----@param secondary vector3|{r: integer, g: integer, b: integer}? Changes the friend or crew indicator colour or the main colour of the blip if primary is set to `84`.
-function exports.iblips:setcolours(blip, opacity, primary, secondary) end
-
----@param blip integer
 ---@param coords vector3
 ---@param heading number?
 function exports.iblips:setcoords(blip, coords, heading) end
@@ -47,11 +41,17 @@ function exports.iblips:setcoords(blip, coords, heading) end
 function exports.iblips:setdisplay(blip, category, display, priority) end
 
 ---@param blip integer
----@param flashes boolean
+---@param opacity integer?
+---@param primary integer? See [HUD Colours](https://docs.fivem.net/docs/game-references/blips/#blip-colors).
+---@param secondary vector3|{r: integer, g: integer, b: integer}? Changes the friend or crew indicator colour or the main colour of the blip if primary is set to `84`.
+function exports.iblips:setcolours(blip, opacity, primary, secondary) end
+
+---@param blip integer
+---@param enable boolean
 ---@param time integer?
 ---@param duration integer?
 ---@param colour integer?
-function exports.iblips:setflashes(blip, flashes, time, duration, colour) end
+function exports.iblips:setflashes(blip, enable, time, duration, colour) end
 
 ---@param blip integer
 ---@param sprite integer
@@ -115,16 +115,30 @@ function exports.iblips:setimage(blip, image) end
 function exports.iblips:seteconomy(blip, rp, money, ap) end
 
 ---@param blip integer
+---@param info {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}
+---@return integer blip
+function exports.iblips:addinfo(blip, info) end
+
+---@param blip integer
+---@param key integer
+---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}
+function exports.iblips:updateinfokey(blip, key, data) end
+
+---@param blip integer
+---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[]
+function exports.iblips:setinfo(blip, data) end
+
+---@param blip integer
 ---@param options blip_creator_options
 ---@return integer blip
-function exports.iblips:setcreatordata(blip, options) end
+function exports.iblips:setcreatoroptions(blip, options) end
+
+---@param blip integer
+---@return {title: string, verified: integer, rp: string, money: string, image: string|{resource: string, name: string, width: integer, height: integer}, ap: string, info: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[]}?
+function exports.iblips:getcreator(blip) end
 
 ---@param blip integer
 ---@param time integer
 ---@param callback fun(blip: integer): blip_creator_options
 ---@return fun(state: boolean?): state: boolean pause, fun() destroy, fun(new_interval: integer, new_callback: fun(blip: integer): blip_creator_options) update
 function exports.iblips:creatorupdater(blip, time, callback) end
-
----@param blip integer
----@return {title: string, verified: integer, rp: string, money: string, image: string|{resource: string, name: string, width: integer, height: integer}, ap: string, info: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: integer}[]}?
-function exports.iblips:getcreator(blip) end
