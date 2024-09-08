@@ -459,7 +459,7 @@ do
     end
   end
 
-  ---@enum VERIFIED_TYPES
+  ---@enum (key) VERIFIED_TYPES
   local VERIFIED_TYPES <const> = {
     ['none'] = 0,
     ['verified'] = 1,
