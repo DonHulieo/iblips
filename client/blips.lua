@@ -5,7 +5,7 @@
 ---@field getdata fun(blip: integer): {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}
 ---@field setcolours fun(blip: integer, alpha: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?)
 ---@field setcoords fun(blip: integer, coords: vector3, heading: number?)
----@field setdisplay fun(blip: integer, category: integer, display: integer, priority: integer?)
+---@field setdisplay fun(blip: integer, category: blip_categories?, display: blip_displays?, priority: integer?)
 ---@field setflashes fun(blip: integer, flashes: boolean, interval: integer?, duration: integer?, colour: integer?)
 ---@field setstyle fun(blip: integer, sprite: integer, scale: number|vector2, friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?)
 ---@field setindicators fun(blip: integer, crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?)
@@ -209,6 +209,10 @@ do
 
   ---@enum (key) blip_categories
   local blip_categories = {
+    --[[
+      https://github.com/vhub-team/native-db/blob/f1635dda3a5ac6cda982c97f105c07a341d2c022/enums/BLIP_CATEGORY.md
+      https://github.com/scripthookvdotnet/scripthookvdotnet/blob/e219d506b32a2ba9a6676c6eae5d99208a22bff8/source/scripting_v3/GTA/Blip/BlipCategoryType.cs
+    ]] --
     nodist = 1,
     dist = 2,
     jobs = 3,
@@ -224,6 +228,10 @@ do
 
   ---@enum (key) blip_displays
   local blip_displays = {
+    --[[
+      https://github.com/vhub-team/native-db/blob/main/enums/BLIP_DISPLAY.md
+      https://github.com/scripthookvdotnet/scripthookvdotnet/blob/e219d506b32a2ba9a6676c6eae5d99208a22bff8/source/scripting_v3/GTA/Blip/BlipCategoryType.cs
+    ]] --
     none = 1,
     all_select = 2,
     pause_select = 3,
@@ -234,16 +242,18 @@ do
   }
 
   ---@param blip integer
-  ---@param category blip_categories
-  ---@param display blip_displays
+  ---@param category blip_categories?
+  ---@param display blip_displays?
   ---@param priority integer?
   local function set_blip_display(blip, category, display, priority)
     if not does_blip_exist(blip) then error('bad argument #1 to \'setblipdisplay\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
-    SetBlipCategory(blip, blip_categories[category])
-    SetBlipDisplay(blip, blip_displays[display])
-    if priority then SetBlipPriority(blip, priority); Blips[blip].options.priority = priority end
+    category = category or Blips[blip].options.category or 'nodist'
+    display = display or Blips[blip].options.display or 'all_select'
+    if Blips[blip].options.category ~= category then SetBlipCategory(blip, blip_categories[category]) end
+    if Blips[blip].options.display ~= display then SetBlipDisplay(blip, blip_displays[display]) end
+    if priority then --[[https://github.com/vhub-team/native-db/blob/main/enums/BLIP_PRIORITY.md]] SetBlipPriority(blip, priority); Blips[blip].options.priority = priority end
     Blips[blip].options.category = category
     Blips[blip].options.display = display
   end
@@ -424,6 +434,13 @@ do
     end
   end
 
+  ---@enum verified_types
+  local verified_types = {
+    ['none'] = 0,
+    ['verified'] = 1,
+    ['created'] = 2
+  }
+
   ---@param blip integer
   ---@param creator boolean
   local function set_blip_as_creator(blip, creator)
@@ -444,14 +461,13 @@ do
 
   ---@param blip integer
   ---@param title string?
-  ---@param verified boolean?
-  local function set_blip_title(blip, title, verified, style)
+  ---@param verified verified_types?
+  local function set_blip_title(blip, title, verified)
     if not does_blip_exist(blip) then error('bad argument #1 to \'setbliptitle\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
     if title then Blips[blip].options.creator.title = title end
-    if verified then Blips[blip].options.creator.verified = verified end
-    if style then Blips[blip].options.creator.style = style end
+    if verified and verified_types[verified] then Blips[blip].options.creator.verified = verified_types[verified] end
   end
 
   ---@param blip integer
