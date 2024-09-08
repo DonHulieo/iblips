@@ -1,7 +1,7 @@
 local duff = duff
 local bridge, locale, require, scaleform, streaming = duff.bridge, duff.locale, duff.package.require, duff.scaleform, duff.streaming
-local blips = require 'client.blips' --[[@module 'blips.client.blips']]
-local config = require 'shared.config' --[[@module 'blips.shared.config']]
+local blips = require 'client.blips' --[[@module 'iblips.client.blips']]
+local config = require 'shared.config' --[[@module 'iblips.shared.config']]
 local LOAD_EVENT <const>, UNLOAD_EVENT <const> = bridge['_DATA']['EVENTS'].LOAD, bridge['_DATA']['EVENTS'].UNLOAD
 local TXD <const> = CreateRuntimeTxd 'don_blips'
 local RES_NAME <const> = GetCurrentResourceName()
@@ -39,7 +39,7 @@ local function trans_creator_data(options)
   return options
 end
 
----@param blip_type blip_types
+---@param blip_type BLIP_TYPES
 ---@param data {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}
 ---@param options blip_options
 ---@param creator_options blip_creator_options?
