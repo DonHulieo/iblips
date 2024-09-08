@@ -1,7 +1,7 @@
 ---@class blips
 ---@field Blips table
----@field create fun(type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}): integer
----@field gettype fun(blip: integer): blip_types
+---@field create fun(type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}): integer
+---@field gettype fun(blip: integer): BLIP_TYPE_IDS
 ---@field getdata fun(blip: integer): {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}
 ---@field setcolours fun(blip: integer, alpha: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?)
 ---@field setcoords fun(blip: integer, coords: vector3, heading: number?)
@@ -18,10 +18,6 @@
 ---@field settitle fun(blip: integer, title: string, verified: boolean, style: integer)
 ---@field setimage fun(blip: integer, image: string|{resource: string, name: string, width: integer, height: integer})
 ---@field seteconomy fun(blip: integer, rp: string, money: string)
----@field addtext fun(blip: integer, title: string, text: string)
----@field addname fun(blip: integer, title: string, text: string)
----@field addheader fun(blip: integer, title: string, text: string)
----@field addicon fun(blip: integer, title: string, text: string, icon: string, colour: integer, checked: boolean)
 ---@field setcreatordata fun(blip: integer, options: blip_creator_options): blip: integer
 ---@field createupdater fun(blip: integer, interval: integer, callback: fun(blip: integer): blip_creator_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_creator_options)
 ---@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string|{resource: string, name: string, width: integer, height: integer}, rp: string, money: string, style: integer, data: {title: string, text: string, icon: integer?, colour: integer?, checked: boolean?}[]}}
@@ -32,8 +28,8 @@ do
   local Blips = {}
   local count = 0
 
-  ---@enum (key) blip_types
-  local blip_types = {
+  ---@enum (key) BLIP_TYPES
+  local BLIP_TYPES <const> = {
     area = AddBlipForArea,
     coord = AddBlipForCoord,
     entity = AddBlipForEntity,
@@ -48,11 +44,11 @@ do
   ---@enum entity_types
   local entity_types = {[0] = 'none', [1] = 'ped', [2] = 'vehicle', [3] = 'object'}
 
-  ---@param type blip_types
+  ---@param type BLIP_TYPES
   ---@param data {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}
   ---@return integer
   local function create_blip(type, data)
-    if not blip_types[type] then error('bad argument #1 to \'createblip\' (invalid blip type)', 2) end
+    if not BLIP_TYPES[type] then error('bad argument #1 to \'createblip\' (invalid blip type)', 2) end
     if not data then error('bad argument #2 to \'createblip\' (table expected, got nil)', 2) end
     local blip = -1
     if type == 'area' then
@@ -60,33 +56,33 @@ do
       if not coords then error('bad argument #2 to \'createblip\' (coords expected, got nil)', 2) end
       if not width then error('bad argument #2 to \'createblip\' (width expected, got nil)', 2) end
       if not height then error('bad argument #2 to \'createblip\' (height expected, got nil)', 2) end
-      blip = blip_types[type](coords.x, coords.y, coords.z, width, height)
+      blip = BLIP_TYPES[type](coords.x, coords.y, coords.z, width, height)
     elseif type == 'coord' then
       local coords = data.coords
       if not coords then error('bad argument #2 to \'createblip\' (coords expected, got nil)', 2) end
-      blip = blip_types[type](coords.x, coords.y, coords.z)
+      blip = BLIP_TYPES[type](coords.x, coords.y, coords.z)
     elseif type == 'entity' then
       local entity = data.entity
       if not entity or not does_entity_exist(entity) then error('bad argument #2 to \'createblip\' (entity is invalid)', 2) end
-      blip = blip_types[type](entity)
-      type = entity_types[GetEntityType(entity)] --[[@as blip_types]] or type
+      blip = BLIP_TYPES[type](entity)
+      type = entity_types[GetEntityType(entity)] --[[@as BLIP_TYPES]] or type
     elseif type == 'pickup' then
       local pickup = data.pickup
       if not pickup or not does_pickup_exist(pickup) then error('bad argument #2 to \'createblip\' (pickup is invalid)', 2) end
-      blip = blip_types[type](pickup)
+      blip = BLIP_TYPES[type](pickup)
     elseif type == 'radius' then
       local coords, radius = data.coords, data.radius
       if not coords then error('bad argument #2 to \'createblip\' (coords expected, got nil)', 2) end
       if not radius then error('bad argument #2 to \'createblip\' (radius expected, got nil)', 2) end
-      blip = blip_types[type](coords.x, coords.y, coords.z, radius)
+      blip = BLIP_TYPES[type](coords.x, coords.y, coords.z, radius)
     elseif type == 'race' then
       local coords = data.coords
       if not coords then error('bad argument #2 to \'createblip\' (coords expected, got nil)', 2) end
-      blip = blip_types[type](coords.x, coords.y, coords.z)
+      blip = BLIP_TYPES[type](coords.x, coords.y, coords.z)
     elseif type == 'route' then
       local coords = data.coords
       if not coords then error('bad argument #2 to \'createblip\' (coords expected, got nil)', 2) end
-      blip = blip_types[type](coords.x, coords.y, coords.z)
+      blip = BLIP_TYPES[type](coords.x, coords.y, coords.z)
     end
     count += 1
     Blips[blip] = {id = count, type = type, data = data}
@@ -107,8 +103,8 @@ do
   end
 
 
-  ---@enum BLIP_TYPES
-  local BLIP_TYPES <const> = {
+  ---@enum BLIP_TYPE_IDS
+  local BLIP_TYPE_IDS <const> = {
     [1] = 'vehicle',
     [2] = 'ped',
     [3] = 'object',
@@ -125,7 +121,7 @@ do
     if not Blips[blip] then
       local blip_type = GetBlipInfoIdType(blip)
       if does_blip_exist(blip) then
-        Blips[blip] = {type = BLIP_TYPES[blip_type] or blip_type}
+        Blips[blip] = {type = BLIP_TYPE_IDS[blip_type] or blip_type}
       else
         error('bad argument #1 to \'getbliptype\' (blip `'..blip..'` doesn\'t exist)', 2)
       end
