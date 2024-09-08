@@ -19,9 +19,10 @@
 ---@field settitle fun(blip: integer, title: string?, verified: VERIFIED_TYPES?)
 ---@field setimage fun(blip: integer, image: string|{resource: string, name: string, width: integer, height: integer}?)
 ---@field seteconomy fun(blip: integer, rp: string?, money: string?, ap: string?)
----@field addinfo fun(blip: integer, data: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[])
+---@field addinfo fun(blip: integer, data: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES})
 ---@field setinfokey fun(blip: integer, key: integer, data: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES})
----@field setinfo fun(blip: integer, options: blip_creator_options): blip: integer
+---@field setinfo fun(blip: integer, options: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[])
+---@field setcreatoroptions fun(blip: integer, options: blip_creator_options): blip: integer
 ---@field getcreator fun(blip: integer): {title: string, verified: integer, rp: string, money: string, image: string|{resource: string, name: string, width: integer, height: integer}, ap: string, info: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[]}?
 ---@field createupdater fun(blip: integer, interval: integer, callback: fun(blip: integer): blip_creator_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_creator_options)
 do
@@ -533,13 +534,13 @@ do
   }
 
   ---@param blip integer
-  ---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[]
+  ---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}
   local function add_creator_info(blip, data)
     if not does_blip_exist(blip) then error('bad argument #1 to \'addinfo\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
     local info = Blips[blip].options.creator.info
-    for i = 1, #data do info[#info + 1] = data[i] end
+    info[#info + 1] = data
   end
 
   ---@param blip integer
@@ -552,6 +553,15 @@ do
     local info = Blips[blip].options.creator.info
     if not info[key] then return end
     info[key] = data
+  end
+
+  ---@param blip integer
+  ---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[]
+  local function set_creator_info(blip, data)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setinfo\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    init_blip(blip)
+    if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
+    Blips[blip].options.creator.info = data
   end
 
   ---@class blip_creator_options
@@ -567,14 +577,14 @@ do
   ---@param options blip_creator_options
   ---@return integer blip
   local function set_blip_creator_data(blip, options)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setinfo\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setcreatoroptions\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
     set_blip_title(blip, options.title, options.verified)
     if options.image ~= '' then set_blip_image(blip, options.image) end
     set_blip_economy(blip, options.rp, options.money, options.ap)
     local info = options.info
-    if info then add_creator_info(blip, info) end
+    if info then set_creator_info(blip, info) end
     return blip
   end
 
@@ -642,7 +652,8 @@ do
     seteconomy = set_blip_economy,
     addinfo = add_creator_info,
     updateinfokey = update_creator_info,
-    setinfo = set_blip_creator_data,
+    setinfo = set_creator_info,
+    setcreatordata = set_blip_creator_data,
     getcreator = get_creator_data,
     creatorupdater = creator_updater
   }
