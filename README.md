@@ -28,6 +28,8 @@ This is a framework for creating interactive blips on the map, both static and d
       - [Dependencies](#dependencies)
       - [Initial Setup](#initial-setup)
     - [Configuration](#configuration)
+      - [Annotations](#annotations)
+        - [Usage (VS Code)](#usage-vs-code)
       - [Shared](#shared)
     - [Documentation](#documentation)
       - [options](#options)
@@ -56,6 +58,20 @@ This is a framework for creating interactive blips on the map, both static and d
 - Configure `shared/config.lua` & `server/config.lua` to your liking, see [Configuration](#configuration) for more information.
 
 ### Configuration
+
+#### Annotations
+
+Function completion is available for all functions, enums and classes. This means you can see what parameters a function takes, what an enum value is, or what a class field is. This is done through [Lua Language Server](https://github.com/LuaLS/lua-language-server).
+
+##### Usage (VS Code)
+
+- Install [cfxlua-vscode](https://marketplace.visualstudio.com/items?itemName=overextended.cfxlua-vscode).
+- Open your settings (Ctrl + ,) and add the following:
+  - Search for `Lua.workspace.library`, and create a new entry pointing to the root of the resource, for example:
+
+```json
+"Lua.workspace.library": ["F:/resources/[don]/iblips/meta"],
+```
 
 #### Shared
 
