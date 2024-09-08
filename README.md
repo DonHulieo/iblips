@@ -83,7 +83,7 @@ Function completion is available for all functions, enums and classes. This mean
 
 ```lua
 {
-  ---@type {['Jobs']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Jobs']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Jobs'] =  {
     {
       type = 'coord',
@@ -99,15 +99,15 @@ Function completion is available for all functions, enums and classes. This mean
       creator = blip_creator_options
     },
   },
-  ---@type {['Mission']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Mission']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Mission'] = {},
-  ---@type {['Activity']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Activity']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Activity'] = {},
-  ---@type {['Shops']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Shops']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Shops'] = {},
-  ---@type {['Races']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Races']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Races'] = {},
-  ---@type {['Property']: {type: blip_types, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
+  ---@type {['Property']: {type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, radius: number?}, options: blip_options, creator: blip_creator_options}[]}
   ['Property'] = {}
 }
 ```
@@ -253,7 +253,7 @@ Creator options are the configuration for the MissionCreator Blip Scaleform, thi
   - `height` integer: The height of the image.
 - `rp` string: The Rp count displayed on the blip.
 - `money` string: The money count displayed on the blip.
-- ap string: The Ap count displayed on the blip.
+- `ap` string: The Ap count displayed on the blip.
 - `info: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: integer}[]?`:
   - `type` integer: The type of the info.
     - `0` The info is a title info with just a title.
@@ -327,11 +327,11 @@ Each Creator Blip can have a header image, these can either be stored in this re
 A blip creation super function, this function will create a blip with the specified options.
 
 ```lua
----@param type blip_types
----@param data {coords: vector3|vector4?, width: number?, height: number?, radius: number?}
+---@param blip_type BLIP_TYPES
+---@param data {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}
 ---@param options blip_options
----@param creator blip_creator_options?
----@return integer blip_id
+---@param creator_options blip_creator_options?
+---@return integer blip
 export.iblips:initblip(type, data, options, creator)
 ```
 
@@ -379,7 +379,7 @@ A blip creator data super function, this function will set the creator data of a
 ---@param blip_id integer
 ---@param creator blip_creator_options
 ---@return integer blip_id
-export.iblips:setcreatordata(blip_id, creator)
+export.iblips:setcreatoroptions(blip_id, creator)
 ```
 
 - `blip_id` integer: The blip id of the blip.
