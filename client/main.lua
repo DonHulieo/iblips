@@ -10,7 +10,7 @@ local NUI_PATH <const> = 'https://cfx-nui-%s/%s'
 local Images = {}
 local t = locale.t
 local call_scaleform = scaleform.callfrontend
-local can_control, take_control, release_control = TakeControlOfFrontend, TakeControlOfFrontend, ReleaseControlOfFrontend
+local can_control, take_control, release_control = IsFrontendReadyForControl, TakeControlOfFrontend, ReleaseControlOfFrontend
 local is_mission_creator_blip, get_selected_mission_creator_blip = IsHoveringOverMissionCreatorBlip, GetNewSelectedMissionCreatorBlip
 local does_blip_exist = DoesBlipExist
 
