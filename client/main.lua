@@ -8,32 +8,40 @@ local RES_NAME <const> = GetCurrentResourceName()
 local IMAGE_PATH <const> = 'images/%s.png'
 local NUI_PATH <const> = 'https://cfx-nui-%s/%s'
 local Images = {}
-local call_scaleform = scaleform.callfrontend
 local t = locale.t
+local call_scaleform = scaleform.callfrontend
+local can_control, take_control, release_control = TakeControlOfFrontend, TakeControlOfFrontend, ReleaseControlOfFrontend
+local is_mission_creator_blip, get_selected_mission_creator_blip = IsHoveringOverMissionCreatorBlip, GetNewSelectedMissionCreatorBlip
+local does_blip_exist = DoesBlipExist
 
 ---@param key string?
 ---@return boolean
 local function does_trans_exist(key) return pcall(t, key) end
 
-local function get_crew_tag(crew) return ('{*_%s}'):format(crew) end
+---@param crew string? 4 Character Crew Tag
+---@return string crew_tag {*_CREW}, formatted to be used in blip_creator_options
+local function get_crew_tag(crew) return ('{*_%s}'):format(crew or 'NULL') end
+
+---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}
+---@return {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}?
+local function trans_creator_info(data)
+  if not data then return end
+  if data.title then data.title = does_trans_exist(data.title) and t(data.title) or data.title end
+  if data.text then data.text = does_trans_exist(data.text) and t(data.text) or data.text end
+  if data.crew then data.crew = get_crew_tag(does_trans_exist(data.crew) and t(data.crew) or data.crew) end
+  return data
+end
 
 ---@param options blip_creator_options
 ---@return blip_creator_options?
 local function trans_creator_data(options)
   if not options then return end
   options.title = does_trans_exist(options.title) and t(options.title) or options.title
-  local function parse_title_text(data)
-    if not data then return end
-    if data.title then data.title = does_trans_exist(data.title) and t(data.title) or data.title end
-    if data.text then data.text = does_trans_exist(data.text) and t(data.text) or data.text end
-    if data.crew then data.crew = get_crew_tag(does_trans_exist(data.crew) and t(data.crew) or data.crew) end
-    return data
-  end
   local info = options.info
   if info then
     for i = 1, #info do
       local entry = info[i]
-      entry = entry and parse_title_text(entry) or entry
+      entry = trans_creator_info(entry) and trans_creator_info(entry) or entry
     end
   end
   return options
@@ -68,9 +76,18 @@ local function init_script(resource)
   end
 end
 
+---@param state boolean
+local function show_display(state) call_scaleform('SHOW_COLUMN', 1, state) end
+
+local function clear_display() call_scaleform('SET_DATA_SLOT_EMPTY', 1) end
+
 ---@param resource string?
 local function deinit_script(resource)
   if resource and type(resource) == 'string' and resource ~= RES_NAME then return end
+  show_display(false)
+  clear_display()
+  release_control()
+  SetStreamedTextureDictAsNoLongerNeeded('don_blips')
   blips.clear()
   Images = {}
 end
@@ -103,12 +120,7 @@ local function set_creator_title(title, verified, rp, money, ap, image)
   SetStreamedTextureDictAsNoLongerNeeded('don_blips')
 end
 
-local function clear_display() call_scaleform('SET_DATA_SLOT_EMPTY', 1) end
-
 local function update_display() call_scaleform('DISPLAY_DATA_SLOT', 1) end
-
----@param state boolean
-local function show_display(state) call_scaleform('SHOW_COLUMN', 1, state) end
 
 -------------------------------- EVENTS --------------------------------
 AddEventHandler('onResourceStart', init_script)
@@ -134,16 +146,16 @@ CreateThread(function()
     Wait(sleep)
     if IsPauseMenuActive() then
       sleep = 500
-      if IsFrontendReadyForControl() then
-        if IsHoveringOverMissionCreatorBlip() then
-          local blip = GetNewSelectedMissionCreatorBlip()
-          if not DoesBlipExist(blip) or blip == 0 or blip == last_blip then goto continue end
+      if can_control() then
+        if is_mission_creator_blip() then
+          local blip = get_selected_mission_creator_blip()
+          if not does_blip_exist(blip) or blip == 0 or blip == last_blip then goto continue end
           last_blip, sleep = blip, 0
           local blip_data = blips.getcreator(blip)
           if not blip_data then
             show_display(false)
           else
-            TakeControlOfFrontend()
+            take_control()
             clear_display()
             set_creator_title(blip_data.title, blip_data.verified, blip_data.rp, blip_data.money, blip_data.ap, blip_data.image)
             for i = 1, #blip_data.info do
@@ -156,7 +168,7 @@ CreateThread(function()
             PlaySoundFrontend(-1, 'SELECT', 'HUD_FRONTEND_DEFAULT_SOUNDSET', true)
             show_display(true)
             update_display()
-            ReleaseControlOfFrontend()
+            release_control()
           end
           ::continue::
         else
