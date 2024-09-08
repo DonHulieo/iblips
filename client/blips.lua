@@ -266,13 +266,14 @@ do
     local colours = {Blips[blip].options.primary, colour}
     local time = Blips[blip].options.flash_interval
     local duration = Blips[blip].options.flash_duration or -1
-    local i = 0
+    local state = false
     local _, idx = interval.create(function(blip_id, interval_id)
       if not does_blip_exist(blip_id) or not Blips[blip_id].options.flashes then interval.stop(interval_id) end
-      SetBlipColour(blip_id, colours[i % 2 + 1])
-      i += 1
+      state = not state
+      SetBlipColour(blip_id, colours[state and 1 or 2])
     end, time, duration)
     interval.start(idx, nil, blip, idx)
+    Blips[blip].options.flash_interval_idx = idx
   end
 
   ---@param blip integer
@@ -371,14 +372,39 @@ do
     Blips[blip].options.name = name
   end
 
+  ---@param blip integer
+  ---@param distance number
+  local function set_blip_distance(blip, distance)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipdistance\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    init_blip(blip)
+    Blips[blip].options = Blips[blip].options or {}
+    Blips[blip].options.distance = distance
+    local ped = PlayerPedId()
+    local coords = Blips[blip].data.coords or GetBlipCoords(blip)
+    local flash_interval = Blips[blip].options.flash_interval_idx
+    local state = nil
+    local _, idx = interval.create(function(blip_id, interval_id)
+      if not does_blip_exist(blip_id) then interval.stop(interval_id) end
+      local in_range = #(GetEntityCoords(ped) - coords) <= distance
+      if in_range ~= state then
+        set_blip_display(blip_id, nil, in_range and 'all_select' or 'none')
+        if state ~= nil and flash_interval then interval.pause(flash_interval, not in_range) end
+        state = in_range
+      end
+    end, 1000)
+    interval.start(idx, nil, blip, idx)
+    Blips[blip].options.distance_idx = idx
+  end
+
   ---@class blip_options
-  ---@field name string
+  ---@field name string?
   ---@field coords vector3|vector4?
-  ---@field colours {opacity: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?}
-  ---@field display {category: blip_categories, display: blip_displays, priority: integer?}
-  ---@field flashes {enable: boolean, interval: integer?, duration: integer?, colour: integer?}
-  ---@field style {sprite: integer, scale: number|vector2, friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?}
-  ---@field indicators {crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?}
+  ---@field distance number?
+  ---@field colours {opacity: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?}?
+  ---@field display {category: blip_categories, display: blip_displays, priority: integer?}?
+  ---@field flashes {enable: boolean, interval: integer?, duration: integer?, colour: integer?}?
+  ---@field style {sprite: integer, scale: number|vector2, friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?}?
+  ---@field indicators {crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?}?
 
   ---@param blip integer
   ---@param options blip_options
@@ -394,6 +420,7 @@ do
     if options.style then set_blip_style(blip, options.style?.sprite, options.style?.scale, options.style?.friendly, options.style?.bright, options.style?.hidden, options.style?.high_detail, options.style?.show_cone, options.style?.short_range, options.style?.shrink) end
     if options.indicators then set_blip_indicators(blip, options.indicators?.crew, options.indicators?.friend, options.indicators?.completed, options.indicators?.heading, options.indicators?.height, options.indicators?.count, options.indicators?.outline, options.indicators?.tick) end
     if options.name then set_blip_name(blip, options.name) end
+    if options.distance then set_blip_distance(blip, options.distance) end
     return blip
   end
 
@@ -414,6 +441,7 @@ do
       if not data then return end
       ---@cast data +blip_options
       if data.coords then set_blip_coords(blip, data.coords, data.coords?.w) end
+      if data.distance then set_blip_distance(blip, data.distance) end
       if data.colours then set_blip_colours(blip, data.colours?.opacity, data.colours?.primary, data.colours?.secondary) end
       if data.display then set_blip_display(blip, data.display?.category, data.display?.display, data.display?.priority) end
       if data.flashes then set_blip_flashes(blip, data.flashes?.enable, data.flashes?.interval, data.flashes?.duration, data.flashes?.colour) end
@@ -627,6 +655,7 @@ do
     setstyle = set_blip_style,
     setindicators = set_blip_indicators,
     setname = set_blip_name,
+    setdist = set_blip_distance,
     setoptions = set_blip_options,
     updater = blip_updater,
     setcreator = set_blip_as_creator,
