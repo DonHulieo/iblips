@@ -382,6 +382,7 @@ do
     local state = nil
     local _, idx = interval.create(function(blip_id, interval_id)
       if not does_blip_exist(blip_id) then interval.stop(interval_id) end
+      if not does_entity_exist(ped) then repeat Wait(100); ped = PlayerPedId() until does_entity_exist(ped) end
       local in_range = #(GetEntityCoords(ped) - coords) <= distance
       if in_range ~= state then
         set_blip_display(blip_id, nil, in_range and 'all_select' or 'none')
