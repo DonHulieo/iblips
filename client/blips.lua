@@ -1,27 +1,29 @@
 ---@class blips
 ---@field Blips table
----@field create fun(type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}): integer
----@field gettype fun(blip: integer): BLIP_TYPE_IDS
+---@field create fun(type: BLIP_TYPES, data: {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}): blip: integer
+---@field remove fun(blip: integer): removed: boolean
+---@field clear fun()
+---@field gettype fun(blip: integer): blip_type: BLIP_TYPE_IDS
 ---@field getdata fun(blip: integer): {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}
----@field setcolours fun(blip: integer, alpha: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?)
 ---@field setcoords fun(blip: integer, coords: vector3, heading: number?)
 ---@field setdisplay fun(blip: integer, category: BLIP_CATEGORIES?, display: BLIP_DISPLAYS?, priority: integer?)
----@field setflashes fun(blip: integer, flashes: boolean, interval: integer?, duration: integer?, colour: integer?)
+---@field setcolours fun(blip: integer, opacity: integer?, primary: integer?, secondary: vector3|{r: integer, g: integer, b: integer}?)
+---@field setflashes fun(blip: integer, enable: boolean, time: integer?, duration: integer?, colour: integer?)
 ---@field setstyle fun(blip: integer, sprite: integer, scale: number|vector2, friendly: boolean?, bright: boolean?, hidden: boolean?, high_detail: boolean?, show_cone: boolean?, short_range: boolean?, shrink: boolean?)
 ---@field setindicators fun(blip: integer, crew: boolean?, friend: boolean?, completed: boolean?, heading: boolean?, height: boolean?, count: integer?, outline: boolean?, tick: boolean?)
 ---@field setname fun(blip: integer, name: string)
 ---@field setrange fun(blip: integer, distance: number)
 ---@field setoptions fun(blip: integer, options: blip_options): blip: integer
----@field updater fun(blip: integer, interval: integer, callback: fun(blip: integer): blip_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_options)
----@field remove fun(blip: integer): boolean
----@field clear fun()
+---@field updater fun(blip: integer, time: integer, callback: fun(blip: integer): blip_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_options)
 ---@field setcreator fun(blip: integer, creator: boolean)
----@field settitle fun(blip: integer, title: string, verified: boolean, style: integer)
----@field setimage fun(blip: integer, image: string|{resource: string, name: string, width: integer, height: integer})
----@field seteconomy fun(blip: integer, rp: string, money: string)
----@field setcreatordata fun(blip: integer, options: blip_creator_options): blip: integer
+---@field settitle fun(blip: integer, title: string?, verified: VERIFIED_TYPES?)
+---@field setimage fun(blip: integer, image: string|{resource: string, name: string, width: integer, height: integer}?)
+---@field seteconomy fun(blip: integer, rp: string?, money: string?, ap: string?)
+---@field addinfo fun(blip: integer, data: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[])
+---@field setinfokey fun(blip: integer, key: integer, data: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES})
+---@field setinfo fun(blip: integer, options: blip_creator_options): blip: integer
+---@field getcreator fun(blip: integer): {title: string, verified: integer, rp: string, money: string, image: string|{resource: string, name: string, width: integer, height: integer}, ap: string, info: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[]}?
 ---@field createupdater fun(blip: integer, interval: integer, callback: fun(blip: integer): blip_creator_options): pause: fun(state: boolean?): state: boolean, destroy: fun(), update: fun(new_interval: integer, new_callback: fun(blip: integer): blip_creator_options)
----@field getcreator fun(blip: integer): {title: string, verified: boolean, image: string|{resource: string, name: string, width: integer, height: integer}, rp: string, money: string, style: integer, data: {title: string, text: string, icon: integer?, colour: integer?, checked: boolean?}[]}}
 do
   local duff = duff
   local math, interval = duff.math, duff.interval
@@ -103,7 +105,6 @@ do
     for blip in pairs(Blips) do remove_blip(blip) end
   end
 
-
   ---@enum BLIP_TYPE_IDS
   local BLIP_TYPE_IDS <const> = {
     [1] = 'vehicle',
@@ -171,19 +172,6 @@ do
   local function init_blip(blip)
     if not Blips[blip] then get_blip_type(blip); get_blip_data(blip); count += 1; Blips[blip].id = count end
     return blip
-  end
-
-  ---@param blip integer
-  ---@param opacity integer?
-  ---@param primary integer? See [HUD Colours](https://docs.fivem.net/docs/game-references/blips/#blip-colors).
-  ---@param secondary vector3|{r: integer, g: integer, b: integer}? Changes the friend or crew indicator colour or the main colour of the blip if primary is set to `84`.
-  local function set_blip_colours(blip, opacity, primary, secondary)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipcolours\' (blip `'..blip..'` doesn\'t exist)', 2) end
-    init_blip(blip)
-    Blips[blip].options = Blips[blip].options or {}
-    if opacity then SetBlipAlpha(blip, opacity); Blips[blip].options.opacity = opacity end
-    if primary then SetBlipColour(blip, primary); Blips[blip].options.primary = primary end
-    if secondary then SetBlipSecondaryColour(blip, secondary.r, secondary.g, secondary.b); Blips[blip].options.secondary = secondary end
   end
 
   ---@param blip integer
@@ -255,8 +243,23 @@ do
     Blips[blip].options.display = display
   end
 
+  ---@param blip integer
+  ---@param opacity integer?
+  ---@param primary integer? See [HUD Colours](https://docs.fivem.net/docs/game-references/blips/#blip-colors).
+  ---@param secondary vector3|{r: integer, g: integer, b: integer}? Changes the friend or crew indicator colour or the main colour of the blip if primary is set to `84`.
+  local function set_blip_colours(blip, opacity, primary, secondary)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipcolours\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    init_blip(blip)
+    Blips[blip].options = Blips[blip].options or {}
+    if opacity then SetBlipAlpha(blip, opacity); Blips[blip].options.opacity = opacity end
+    if primary then SetBlipColour(blip, primary); Blips[blip].options.primary = primary end
+    if secondary then SetBlipSecondaryColour(blip, secondary.r, secondary.g, secondary.b); Blips[blip].options.secondary = secondary end
+  end
+
+  ---@param blip integer
+  ---@param colour integer See [HUD Colours](https://docs.fivem.net/docs/game-references/blips/#blip-colors).
   local function custom_flash_blip(blip, colour)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'customflashblip\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setflashes\' (blip `'..blip..'` doesn\'t exist)', 3) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     if not Blips[blip].options.flashes then return end
@@ -274,24 +277,24 @@ do
   end
 
   ---@param blip integer
-  ---@param flashes boolean
+  ---@param enable boolean
   ---@param time integer?
   ---@param duration integer?
   ---@param colour integer?
-  local function set_blip_flashes(blip, flashes, time, duration, colour)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipflashes\' (blip `'..blip..'` doesn\'t exist)', 2) end
+  local function set_blip_flashes(blip, enable, time, duration, colour)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setflashes\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
-    if not flashes and not Blips[blip].options.flashes then return end
+    if not enable and not Blips[blip].options.flashes then return end
     if time then
-      if not colour then SetBlipFlashes(blip, flashes); SetBlipFlashInterval(blip, time) end
+      if not colour then SetBlipFlashes(blip, enable); SetBlipFlashInterval(blip, time) end
       Blips[blip].options.flash_interval = time
     end
     if duration then
       if not colour then SetBlipFlashTimer(blip, duration) end
       Blips[blip].options.flash_duration = duration
     end
-    Blips[blip].options.flashes = flashes
+    Blips[blip].options.flashes = enable
     if colour then custom_flash_blip(blip, colour) end
   end
 
@@ -306,7 +309,7 @@ do
   ---@param short_range boolean?
   ---@param shrink boolean?
   local function set_blip_style(blip, sprite, scale, friendly, bright, hidden, high_detail, show_cone, short_range, shrink)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipstyle\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setstyle\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     SetBlipSprite(blip, sprite)
@@ -336,7 +339,7 @@ do
   ---@param outline boolean?
   ---@param tick boolean?
   local function set_blip_indicators(blip, crew, friend, completed, heading, height, count, outline, tick)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipindicators\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setindicators\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     if crew ~= nil then ShowCrewIndicatorOnBlip(blip, crew); Blips[blip].options.crew = crew end
@@ -359,7 +362,7 @@ do
   ---@param blip integer
   ---@param name string
   local function set_blip_name(blip, name)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipname\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setname\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     local key = 'blip_'..Blips[blip].id
     add_label(key, name)
@@ -372,7 +375,7 @@ do
   ---@param blip integer
   ---@param distance number
   local function set_blip_range(blip, distance)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipdistance\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setrange\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     Blips[blip].options.distance = distance
@@ -408,12 +411,13 @@ do
   ---@param options blip_options
   ---@return integer blip
   local function set_blip_options(blip, options)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipoptions\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setoptions\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     if options.coords then set_blip_coords(blip, options.coords, options.coords?.w) end
-    if options.colours then set_blip_colours(blip, options.colours?.opacity, options.colours?.primary, options.colours?.secondary) end
     if options.display then set_blip_display(blip, options.display?.category, options.display?.display, options.display?.priority) end
+    if options.colours then set_blip_colours(blip, options.colours?.opacity, options.colours?.primary, options.colours?.secondary) end
+
     if options.flashes then set_blip_flashes(blip, options.flashes?.enable, options.flashes?.interval, options.flashes?.duration, options.flashes?.colour) end
     if options.style then set_blip_style(blip, options.style?.sprite, options.style?.scale, options.style?.friendly, options.style?.bright, options.style?.hidden, options.style?.high_detail, options.style?.show_cone, options.style?.short_range, options.style?.shrink) end
     if options.indicators then set_blip_indicators(blip, options.indicators?.crew, options.indicators?.friend, options.indicators?.completed, options.indicators?.heading, options.indicators?.height, options.indicators?.count, options.indicators?.outline, options.indicators?.tick) end
@@ -427,7 +431,7 @@ do
   ---@param callback fun(blip: integer): blip_options
   ---@return fun(state: boolean?): state: boolean pause, fun() destroy, fun(new_interval: integer, new_callback: fun(blip: integer): blip_options) update
   local function blip_updater(blip, time, callback)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'createblipupdater\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'updater\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     local _, idx = interval.create(function(blip_id, interval_id)
@@ -439,12 +443,12 @@ do
       if not data then return end
       ---@cast data +blip_options
       if data.coords then set_blip_coords(blip, data.coords, data.coords?.w) end
-      if data.distance then set_blip_range(blip, data.distance) end
-      if data.colours then set_blip_colours(blip, data.colours?.opacity, data.colours?.primary, data.colours?.secondary) end
       if data.display then set_blip_display(blip, data.display?.category, data.display?.display, data.display?.priority) end
+      if data.colours then set_blip_colours(blip, data.colours?.opacity, data.colours?.primary, data.colours?.secondary) end
       if data.flashes then set_blip_flashes(blip, data.flashes?.enable, data.flashes?.interval, data.flashes?.duration, data.flashes?.colour) end
       if data.style then set_blip_style(blip, data.style?.sprite, data.style?.scale, data.style?.friendly, data.style?.bright, data.style?.hidden, data.style?.high_detail, data.style?.show_cone, data.style?.short_range, data.style?.shrink) end
       if data.indicators then set_blip_indicators(blip, data.indicators?.crew, data.indicators?.friend, data.indicators?.completed, data.indicators?.heading, data.indicators?.height, data.indicators?.count, data.indicators?.outline, data.indicators?.tick) end
+      if data.distance then set_blip_range(blip, data.distance) end
       if data.name then set_blip_name(blip, data.name) end
     end, blip, idx)
     return function(pause)
@@ -470,7 +474,7 @@ do
   ---@param blip integer
   ---@param creator boolean
   local function set_blip_as_creator(blip, creator)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipascreator\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setcreator\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     SetBlipAsMissionCreatorBlip(blip, creator)
@@ -489,7 +493,7 @@ do
   ---@param title string?
   ---@param verified VERIFIED_TYPES?
   local function set_blip_title(blip, title, verified)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setbliptitle\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'settitle\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
     if title then Blips[blip].options.creator.title = title end
@@ -499,7 +503,7 @@ do
   ---@param blip integer
   ---@param image string|{resource: string, name: string, width: integer, height: integer}?
   local function set_blip_image(blip, image)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipimage\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setimage\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
     Blips[blip].options.creator.image = image or ''
@@ -510,31 +514,12 @@ do
   ---@param money string?
   ---@param ap string?
   local function set_blip_economy(blip, rp, money, ap)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'setblipeconomy\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'seteconomy\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
     if rp then Blips[blip].options.creator.rp = rp end
     if money then Blips[blip].options.creator.money = money end
     if ap then Blips[blip].options.creator.ap = ap end
-  end
-
-  ---@param blip integer
-  ---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: integer}[]
-  local function add_creator_info(blip, data)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'addcreatorinfo\' (blip `'..blip..'` doesn\'t exist)', 2) end
-    init_blip(blip)
-    if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
-    local info = Blips[blip].options.creator.info
-    for i = 1, #data do info[#info + 1] = data[i] end
-  end
-
-  local function update_creator_info(blip, key, data)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'updatecreatorinfo\' (blip `'..blip..'` doesn\'t exist)', 2) end
-    init_blip(blip)
-    if not Blips[blip]?.options.creator then return end
-    local info = Blips[blip].options.creator.info
-    if not info[key] then return end
-    info[key] = data
   end
 
   ---@enum CREATOR_TYPES
@@ -546,6 +531,28 @@ do
     header = 4,
     text = 5
   }
+
+  ---@param blip integer
+  ---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[]
+  local function add_creator_info(blip, data)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'addinfo\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    init_blip(blip)
+    if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
+    local info = Blips[blip].options.creator.info
+    for i = 1, #data do info[#info + 1] = data[i] end
+  end
+
+  ---@param blip integer
+  ---@param key integer
+  ---@param data {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}
+  local function update_creator_info(blip, key, data)
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setinfokey\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    init_blip(blip)
+    if not Blips[blip]?.options.creator then return end
+    local info = Blips[blip].options.creator.info
+    if not info[key] then return end
+    info[key] = data
+  end
 
   ---@class blip_creator_options
   ---@field title string
@@ -560,7 +567,7 @@ do
   ---@param options blip_creator_options
   ---@return integer blip
   local function set_blip_creator_data(blip, options)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'initcreatorblip\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'setinfo\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     if not Blips[blip]?.options.creator then set_blip_as_creator(blip, true) end
     set_blip_title(blip, options.title, options.verified)
@@ -572,11 +579,18 @@ do
   end
 
   ---@param blip integer
+  ---@return {title: string, verified: integer, rp: string, money: string, image: string|{resource: string, name: string, width: integer, height: integer}, ap: string, info: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: CREATOR_TYPES}[]}?
+  local function get_creator_data(blip)
+    if not Blips?[blip]?.options?.creator then return end
+    return Blips[blip].options.creator
+  end
+
+  ---@param blip integer
   ---@param time integer
   ---@param callback fun(blip: integer): blip_creator_options
   ---@return fun(state: boolean?): state: boolean pause, fun() destroy, fun(new_interval: integer, new_callback: fun(blip: integer): blip_creator_options) update
   local function creator_updater(blip, time, callback)
-    if not does_blip_exist(blip) then error('bad argument #1 to \'createblipupdater\' (blip `'..blip..'` doesn\'t exist)', 2) end
+    if not does_blip_exist(blip) then error('bad argument #1 to \'createupdater\' (blip `'..blip..'` doesn\'t exist)', 2) end
     init_blip(blip)
     Blips[blip].options = Blips[blip].options or {}
     local _, idx = interval.create(function(blip_id, interval_id)
@@ -605,13 +619,6 @@ do
     end
   end
 
-  ---@param blip integer
-  ---@return {title: string, verified: integer, rp: string, money: string, image: string|{resource: string, name: string, width: integer, height: integer}, ap: string, info: {title: string?, text: string?, icon: integer?, colour: integer?, checked: boolean?, crew: string?, is_social_club: boolean?, type: integer}[]}?
-  local function get_creator_data(blip)
-    if not Blips?[blip]?.options?.creator then return end
-    return Blips[blip].options.creator
-  end
-
   return {
     Blips = Blips,
     create = create_blip,
@@ -619,9 +626,9 @@ do
     clear = clear,
     gettype = get_blip_type,
     getdata = get_blip_data,
-    setcolours = set_blip_colours,
     setcoords = set_blip_coords,
     setdisplay = set_blip_display,
+    setcolours = set_blip_colours,
     setflashes = set_blip_flashes,
     setstyle = set_blip_style,
     setindicators = set_blip_indicators,
@@ -633,8 +640,10 @@ do
     settitle = set_blip_title,
     setimage = set_blip_image,
     seteconomy = set_blip_economy,
-    setcreatordata = set_blip_creator_data,
-    creatorupdater = creator_updater,
-    getcreator = get_creator_data
+    addinfo = add_creator_info,
+    updateinfokey = update_creator_info,
+    setinfo = set_blip_creator_data,
+    getcreator = get_creator_data,
+    creatorupdater = creator_updater
   }
 end
