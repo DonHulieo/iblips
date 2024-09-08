@@ -23,6 +23,7 @@ This is a framework for creating interactive blips on the map, both static and d
   - [Description](#description)
   - [Features](#features)
   - [Table of Contents](#table-of-contents)
+  - [Credits](#credits)
     - [Preview](#preview)
     - [Installation](#installation)
       - [Dependencies](#dependencies)
@@ -38,6 +39,11 @@ This is a framework for creating interactive blips on the map, both static and d
       - [initblip](#initblip)
       - [setoptions](#setoptions)
       - [setcreatordata](#setcreatordata)
+
+## Credits
+
+- [glitchdetector](https://github.com/glitchdetector/fivem-blip-info)
+- [root-cause](https://github.com/root-cause/ragemp-blip-info)
 
 ### Preview
 
