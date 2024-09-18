@@ -16,7 +16,8 @@ local function init_script(resource)
   if resource ~= RES_NAME then return end
   SetTimeout(2000, function()
     local version = GetResourceMetadata(RES_NAME, 'version', 0)
-    check_version(resource, version, 'donhulieo')
+    check_version(resource, version, 'donhulieo', 'iblips')
+    debug_print('^2Script Initialized^0')
   end)
 end
 
