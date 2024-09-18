@@ -113,7 +113,7 @@ local function set_creator_title(title, verified, rp, money, ap, image)
   local is_string = type(image) == 'string'
   if image and not Images[is_string and image or image.name] then
     Images[image] = is_string and CreateRuntimeTextureFromImage(TXD, image --[[@as string]], IMAGE_PATH:format(image)) or create_runtime_from_nui(NUI_PATH:format(image.resource, IMAGE_PATH:format(image.name)), image.name, image.width, image.height)
-    streaming.async.loadtexturedict('don_blips')
+    streaming.await.loadtexturedict('don_blips')
   end
   call_scaleform('SET_COLUMN_TITLE', 1, '', title, verified or 0, {texture = true, name = 'don_blips'}, {texture = true, name = image and (is_string and image or image.name) or ''}, 1, 0, rp == '' and false or rp, money == '' and false or money, ap == '' and false or ap)
   if not image then return end
