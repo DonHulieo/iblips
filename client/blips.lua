@@ -49,7 +49,7 @@ do
   local entity_types = {[0] = 'none', [1] = 'ped', [2] = 'vehicle', [3] = 'object'}
 
   ---@param type BLIP_TYPES
-  ---@param data {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, pickup: integer?, radius: number?}
+  ---@param data {coords: vector3|vector4?, width: number?, height: number?, entity: integer?, ped: integer?, vehicle: integer?, object: integer?, pickup: integer?, radius: number?}
   ---@return integer
   local function create_blip(type, data)
     if not BLIP_TYPES[type] then error('bad argument #1 to \'createblip\' (invalid blip type)', 2) end
@@ -65,8 +65,8 @@ do
       local coords = data.coords
       if not coords then error('bad argument #2 to \'createblip\' (coords expected, got nil)', 2) end
       blip = BLIP_TYPES[type](coords.x, coords.y, coords.z)
-    elseif type == 'entity' then
-      local entity = data.entity
+    elseif type == 'entity' or type == 'ped' or type == 'vehicle' or type == 'object' then
+      local entity = data.entity or data.ped or data.vehicle or data.object
       if not entity or not does_entity_exist(entity) then error('bad argument #2 to \'createblip\' (entity is invalid)', 2) end
       blip = BLIP_TYPES[type](entity)
       type = entity_types[GetEntityType(entity)] --[[@as BLIP_TYPES]] or type
