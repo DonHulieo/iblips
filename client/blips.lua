@@ -417,11 +417,11 @@ do
     Blips[blip].options = Blips[blip].options or {}
     if options.coords then set_blip_coords(blip, options.coords, options.coords?.w) end
     if options.display then set_blip_display(blip, options.display?.category, options.display?.display, options.display?.priority) end
-    if options.colours then set_blip_colours(blip, options.colours?.opacity, options.colours?.primary, options.colours?.secondary) end
 
     if options.flashes then set_blip_flashes(blip, options.flashes?.enable, options.flashes?.interval, options.flashes?.duration, options.flashes?.colour) end
     if options.style then set_blip_style(blip, options.style?.sprite, options.style?.scale, options.style?.friendly, options.style?.bright, options.style?.hidden, options.style?.high_detail, options.style?.show_cone, options.style?.short_range, options.style?.shrink) end
     if options.indicators then set_blip_indicators(blip, options.indicators?.crew, options.indicators?.friend, options.indicators?.completed, options.indicators?.heading, options.indicators?.height, options.indicators?.count, options.indicators?.outline, options.indicators?.tick) end
+    if options.colours then set_blip_colours(blip, options.colours?.opacity, options.colours?.primary, options.colours?.secondary) end
     if options.name then set_blip_name(blip, options.name) end
     if options.distance then set_blip_range(blip, options.distance) end
     return blip
