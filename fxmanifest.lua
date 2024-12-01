@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'DonHulieo'
 description 'Don\'s Interactive Blips Framework for FiveM'
-version '1.0.1'
+version '1.0.2'
 url 'https://github.com/DonHulieo/iblips'
 
 shared_script '@duff/shared/import.lua'
